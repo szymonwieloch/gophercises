@@ -1,0 +1,60 @@
+
+<!doctype html>
+<html>
+<head>
+<title>{{.Title}}</title>
+<meta name="description" content="Choose Your Own Adventure">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+<style>
+    .title {
+        text-align: center;
+        display: block;
+        font-family: "Playfair Display", serif;
+    }
+
+    .container {
+        display:block;
+        padding: 30px;
+        margin: 30px auto;
+        border: 1px solid;
+        max-width: 1000px;
+        background-color: RGB(249, 246, 239);
+        color: RGB(38, 25, 17);
+        border-radius: 10px;
+        font-family: "Source Sans 3", sans-serif;
+    }
+    .options {
+        list-style-type: none;
+    }
+    .option{
+        background-color: RGB(102, 74, 50);
+        padding: 5px;
+        margin: 5px;
+        text-align: center;
+        border-radius: 5px;
+    }
+    .option a {
+        display: block;
+        color:white;
+        text-decoration: none
+    }
+</style>
+</head>
+<body>
+    <article class="container">
+        <h1 class="title">{{.Title}}</h1>
+        {{range .Story}}
+            <p>{{.}}</p>
+        {{end}}
+        <ul class="options">
+            {{range .Options}}
+            <li class="option">
+                <a href="/{{.Arc}}" >{{.Text}}</a>
+            </li>
+            {{end}}
+        </ul>
+    </article>
+</body>
+</html>

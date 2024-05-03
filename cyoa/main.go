@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"log"
 )
 
 func main() {
 	cfg := parseConfig()
 
-	story, err := parseStory(cfg.storyFile)
+	str, err := parseStory(cfg.storyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
+	serve(str, cfg.port)
 
-	fmt.Println(story)
 }

@@ -11,21 +11,23 @@ type option struct {
 	Text string
 }
 
-type arc struct {
+type chapter struct {
 	Title   string
 	Story   []string
 	Options []option
 }
 
-func parseStory(path string) (map[string]arc, error) {
+type story map[string]chapter
+
+func parseStory(path string) (story, error) {
 	f, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file %s: %w", path, err)
 	}
-	var story map[string]arc
-	err = json.Unmarshal(f, &story)
+	var s story
+	err = json.Unmarshal(f, &s)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing JSON file %s: %w", path, err)
 	}
-	return story, nil
+	return s, nil
 }
