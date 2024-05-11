@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 )
 
 func main() {
@@ -16,7 +17,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// clean the input url
+	cfg.url = strings.TrimRight(cfg.url, "/")
 
-	pullSite(cfg.url)
-
+	links := pollSite(cfg.url, cfg.depth)
+	saveSitemap(links, cfg.output)
 }
