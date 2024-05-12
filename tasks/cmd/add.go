@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -11,8 +12,12 @@ var addCmd = &cobra.Command{
 	Use:     "add",
 	Aliases: []string{"a"},
 	Short:   "Adds a task to the system",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		taskName := strings.Join(args, " ")
-		pkg.Add(taskName)
+		taskName = strings.TrimSpace(taskName)
+		if taskName == "" {
+			return fmt.Errorf("Empty task name")
+		}
+		return pkg.Add(taskName)
 	},
 }

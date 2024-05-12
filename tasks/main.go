@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello world")
+	fmt.Println("CLI task manager")
+	fmt.Println()
 	cmd.Execute()
 }
