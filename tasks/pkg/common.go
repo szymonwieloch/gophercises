@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"time"
@@ -15,6 +16,10 @@ type Task struct {
 	Name      string    `json:"name"`
 	Created   time.Time `json:"created"`
 	Completed time.Time `json:"completed"`
+}
+
+func dbID(id TaskID) []byte {
+	return []byte(fmt.Sprintf("%09d", id))
 }
 
 func openDB() (*bolt.DB, error) {

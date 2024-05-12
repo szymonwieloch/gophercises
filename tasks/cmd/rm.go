@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"strconv"
-
 	"github.com/spf13/cobra"
 	"github.com/szymonwieloch/gophercises/tasks/pkg"
 )
@@ -13,10 +11,11 @@ var rmCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Short:   "Removes a task from the system",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		number, err := strconv.ParseUint(args[0], 10, 64)
+		id, err := parseTaskID(args[0])
 		if err != nil {
 			return err
 		}
-		return pkg.Rm(pkg.TaskID(number))
+		handleResult(pkg.Rm(id))
+		return nil
 	},
 }

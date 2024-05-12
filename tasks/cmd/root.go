@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/szymonwieloch/gophercises/tasks/pkg"
 )
 
 var rootCmd = &cobra.Command{
@@ -15,8 +15,9 @@ var rootCmd = &cobra.Command{
 It allows you to define, remove and analyze historical tasks.
 It stores the data locally on your machine`,
 	Version: "0.1",
+	Args:    cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Executing root command with args", args)
+		handleResult(pkg.List(true, false))
 		return nil
 	},
 }
@@ -30,7 +31,6 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Whoops. There was an error while executing your CLI '%s'", err)
 		os.Exit(1)
 	}
 }
