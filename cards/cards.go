@@ -25,7 +25,8 @@ const (
 var allSuits = [...]Suit{Clubs, Diamonds, Spades, Hearts}
 
 const (
-	Ace Rank = iota
+	_ Rank = iota
+	Ace
 	Two
 	Three
 	Four
@@ -48,14 +49,12 @@ const (
 var allRanks = [...]Rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
 
 func rankShortString(r Rank) string {
-	if r >= Two && r < Ten {
-		return fmt.Sprint(r)
+	if r >= Two && r <= Ten {
+		return fmt.Sprint(int(r))
 	}
 	switch r {
 	case Ace:
 		return "A"
-	case Ten:
-		return "X"
 	case King:
 		return "K"
 	case Queen:
@@ -70,9 +69,9 @@ func rankShortString(r Rank) string {
 func suitShortString(s Suit) string {
 	switch s {
 	case Hearts:
-		return "♡"
+		return "♥"
 	case Diamonds:
-		return "♢"
+		return "♦"
 	case Spades:
 		return "♠"
 	case Clubs:
@@ -88,6 +87,7 @@ type Card struct {
 	Suit Suit
 }
 
+// String returns a short text representation of the card, i. e. "4♣"
 func (card Card) String() string {
 	if card.Suit == Joker {
 		return "🃏"
@@ -95,6 +95,7 @@ func (card Card) String() string {
 	return rankShortString(card.Rank) + suitShortString(card.Suit)
 }
 
+// LongName method returns a long text representatio of the card, i. e. "King of Hearts"
 func (card Card) LongName() string {
 	return fmt.Sprintln(card.Rank, "of", card.Suit)
 }
@@ -107,7 +108,7 @@ func (deck Deck) Shuffle() {
 	rand.Shuffle(len(deck), func(i, j int) { deck[i], deck[j] = deck[j], deck[i] })
 }
 
-// Sort
+// Sort first by suit, then by rank
 func (deck Deck) Sort() {
 	slices.SortFunc(deck, func(a, b Card) int {
 		if a.Suit >= b.Suit {
@@ -140,28 +141,33 @@ func newOptions() options {
 	}
 }
 
+// Disables default deck shuffling
 func WithNoShuffle(o *options) {
 	o.shuffle = false
 }
 
+// Adds provided number of jokers to the deck
 func WithJokers(j uint) Option {
 	return func(o *options) {
 		o.jokers = j
 	}
 }
 
+// Some games require multiple decks, the provided paramter allows creation of multiple copies of cards.
 func WithDecks(d uint) Option {
 	return func(o *options) {
 		o.decks = d
 	}
 }
 
+// Some games require only a subset of cards, this option allow you to filter out subset of cards.
 func WithFilter(filter func(c Card) bool) Option {
 	return func(o *options) {
 		o.filter = filter
 	}
 }
 
+// Creates a new deck of cards with specified options.
 func NewDeck(opts ...Option) Deck {
 	o := newOptions()
 	for _, opt := range opts {

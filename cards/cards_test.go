@@ -13,7 +13,7 @@ func ExampleCard() {
 	fmt.Println(Card{Suit: Clubs, Rank: King}.LongName())
 
 	//Output:
-	// X♡
+	// 10♥
 	// King of Clubs
 }
 
