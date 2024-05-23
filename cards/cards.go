@@ -108,6 +108,13 @@ func (deck Deck) Shuffle() {
 	rand.Shuffle(len(deck), func(i, j int) { deck[i], deck[j] = deck[j], deck[i] })
 }
 
+// Pops one card from the deck
+func (deck *Deck) Pop() Card {
+	result := (*deck)[0]
+	*deck = (*deck)[1:]
+	return result
+}
+
 // Sort first by suit, then by rank
 func (deck Deck) Sort() {
 	slices.SortFunc(deck, func(a, b Card) int {
