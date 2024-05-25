@@ -110,6 +110,9 @@ func (deck Deck) Shuffle() {
 
 // Pops one card from the deck
 func (deck *Deck) Pop() Card {
+	if len(*deck) == 0 {
+		panic("Deck is empty")
+	}
 	result := (*deck)[0]
 	*deck = (*deck)[1:]
 	return result
