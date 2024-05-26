@@ -44,9 +44,14 @@ func (player *ConsolePlayer) MakeDecision(playerHand blackjack.Hand, visibleDeal
 		drawBoard(playerHand, visibleDealerHand)
 	}
 	player.firstDecision = false
+	canSplit := blackjack.CanSplit(playerHand)
+	splitStr := ""
+	if canSplit {
+		splitStr = ", s(P)lit"
+	}
 
 	for {
-		fmt.Println("(H)it or (S)tand?")
+		fmt.Println("(H)it, (S)tand", splitStr, "or (D)ouble?")
 		var decision string
 		fmt.Scanln(&decision)
 		clean := strings.ToLower(strings.TrimSpace(decision))
@@ -57,6 +62,15 @@ func (player *ConsolePlayer) MakeDecision(playerHand blackjack.Hand, visibleDeal
 		case "s", "stand":
 			fmt.Println("Player decision: Stand")
 			return blackjack.Stand
+		case "d", "double":
+			fmt.Println("Player decision: Double")
+			return blackjack.Double
+		case "p", "split":
+			if !canSplit {
+				fmt.Println("Cannot split with this hand")
+				break
+			}
+			return blackjack.Split
 		default:
 			fmt.Println("Unrecognised option: ", decision)
 		}

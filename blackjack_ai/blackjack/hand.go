@@ -56,3 +56,7 @@ func isBusted(hand Hand) bool {
 	score, _ := Score(hand)
 	return score > BestScore
 }
+
+func CanSplit(hand Hand) bool {
+	return len(hand) == 2 && hand[0].Rank == hand[1].Rank
+}

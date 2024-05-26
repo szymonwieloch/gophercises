@@ -5,6 +5,8 @@ type PlayerDecision int
 const (
 	Hit PlayerDecision = iota
 	Stand
+	Double
+	Split
 )
 
 type Player interface {
