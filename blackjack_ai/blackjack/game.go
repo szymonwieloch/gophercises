@@ -53,16 +53,32 @@ func playSingle(deck *cards.Deck, player Player, opts gameOptions) Cents {
 		player.OnGameCompleted(hs.hand, dealerHand, result)
 		return result
 	}
-	playerTurn(&hs, player, dealerHand, deck)
-	if isBusted(hs.hand) {
-		player.OnGameCompleted(hs.hand, dealerHand, -hs.bet)
-		return -hs.bet
+	var totalResult Cents
+	leftHands := []handState{hs}
+	var processedHands []handState
+	for len(leftHands) > 0 {
+		current := leftHands[0]
+		leftHands = leftHands[1:]
+		newHands := playerTurn(&current, player, dealerHand, deck)
+		if isBusted(hs.hand) {
+			player.OnGameCompleted(hs.hand, dealerHand, -hs.bet)
+			totalResult -= hs.bet
+		} else {
+			processedHands = append(processedHands, current)
+		}
+		leftHands = append(leftHands, newHands...)
+	}
+	if len(processedHands) == 0 {
+		return totalResult
 	}
 
 	for dealerNeedsToBid(dealerHand) {
 		dealerHand = append(dealerHand, deck.Pop())
 	}
-	return checkResult(hs, dealerHand, player)
+	for _, ps := range processedHands {
+		totalResult += checkResult(ps, dealerHand, player)
+	}
+	return totalResult
 }
 
 func playerTurn(hs *handState, player Player, dealerHand Hand, deck *cards.Deck) []handState {
@@ -87,7 +103,6 @@ func playerTurn(hs *handState, player Player, dealerHand Hand, deck *cards.Deck)
 				hand: hs.hand[1:],
 				bet:  player.Bet(),
 			})
-			// newHand :=
 		}
 		if isBusted(hs.hand) {
 			return newHands
