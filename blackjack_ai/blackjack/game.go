@@ -32,7 +32,7 @@ type handState struct {
 
 func playSingle(deck *cards.Deck, player Player, opts gameOptions) Cents {
 	hs := handState{
-		bet:  player.Bet(),
+		bet:  player.Bet(*deck),
 		hand: Hand{deck.Pop(), deck.Pop()},
 	}
 
@@ -114,7 +114,7 @@ func playerTurn(hs handState, player Player, dealerHand Hand, deck *cards.Deck) 
 		var done bool
 		done, hs, newHand = applyPlayerDecision(hs, deck, decision)
 		if newHand != nil {
-			newHands = append(newHands, handState{hand: newHand, bet: player.Bet()})
+			newHands = append(newHands, handState{hand: newHand, bet: player.Bet(*deck)})
 		}
 		if done {
 			return hs, newHands

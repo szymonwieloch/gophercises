@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/szymonwieloch/gophercises/blackjack_ai/blackjack"
+	"github.com/szymonwieloch/gophercises/cards"
 )
 
 func handString(hand blackjack.Hand) string {
@@ -24,7 +25,7 @@ func drawBoard(playerHand blackjack.Hand, visibleDealerHand blackjack.Hand) {
 type ConsolePlayer struct {
 }
 
-func (player *ConsolePlayer) Bet() blackjack.Cents {
+func (player *ConsolePlayer) Bet(deck cards.Deck) blackjack.Cents {
 	fmt.Println("=========================================")
 	fmt.Println("How many cents do you want to bet?")
 	var result blackjack.Cents

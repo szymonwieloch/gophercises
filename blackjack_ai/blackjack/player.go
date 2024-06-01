@@ -1,5 +1,7 @@
 package blackjack
 
+import "github.com/szymonwieloch/gophercises/cards"
+
 type PlayerDecision int
 
 const (
@@ -10,7 +12,7 @@ const (
 )
 
 type Player interface {
-	Bet() Cents
+	Bet(deck cards.Deck) Cents
 	MakeDecision(playerHand Hand, visibleDealerHand Hand) PlayerDecision
 	OnGameCompleted(playerHand Hand, dealerHand Hand, gain Cents)
 }

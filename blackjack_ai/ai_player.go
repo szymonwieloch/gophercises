@@ -1,12 +1,45 @@
 package main
 
-import "github.com/szymonwieloch/gophercises/blackjack_ai/blackjack"
+import (
+	"github.com/szymonwieloch/gophercises/blackjack_ai/blackjack"
+	"github.com/szymonwieloch/gophercises/cards"
+)
+
+func deckScore(deck cards.Deck) int {
+	result := 0
+	for idx := range deck {
+		score, _ := blackjack.Score(blackjack.Hand(deck[idx : idx+1]))
+		if score >= 10 {
+			result++
+		}
+		if score <= 6 {
+			result--
+		}
+	}
+	return result
+}
+
+func leftDecks(deck cards.Deck) int {
+	return len(deck) / 52
+}
 
 type AIPlayer struct {
 }
 
-func (player AIPlayer) Bet() blackjack.Cents {
-	return 100
+func (player AIPlayer) Bet(deck cards.Deck) blackjack.Cents {
+	score := deckScore(deck)
+	trueScore := score / leftDecks(deck)
+	// if trueScore > 10 {
+	// 	fmt.Println(trueScore)
+	// }
+	switch {
+	case trueScore > 14:
+		return 10000
+	case trueScore > 8:
+		return 500
+	default:
+		return 100
+	}
 }
 
 func (player AIPlayer) MakeDecision(playerHand blackjack.Hand, visibleDealerHand blackjack.Hand) blackjack.PlayerDecision {
