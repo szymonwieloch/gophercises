@@ -22,7 +22,6 @@ func drawBoard(playerHand blackjack.Hand, visibleDealerHand blackjack.Hand) {
 }
 
 type ConsolePlayer struct {
-	firstDecision bool
 }
 
 func (player *ConsolePlayer) Bet() blackjack.Cents {
@@ -34,16 +33,7 @@ func (player *ConsolePlayer) Bet() blackjack.Cents {
 	return result
 }
 
-func (player *ConsolePlayer) OnStart(playerHand blackjack.Hand, visibleDealerHand blackjack.Hand) {
-	drawBoard(playerHand, visibleDealerHand)
-	player.firstDecision = true
-}
-
 func (player *ConsolePlayer) MakeDecision(playerHand blackjack.Hand, visibleDealerHand blackjack.Hand) blackjack.PlayerDecision {
-	if !player.firstDecision {
-		drawBoard(playerHand, visibleDealerHand)
-	}
-	player.firstDecision = false
 	canSplit := blackjack.CanSplit(playerHand)
 	splitStr := ""
 	if canSplit {
@@ -51,6 +41,7 @@ func (player *ConsolePlayer) MakeDecision(playerHand blackjack.Hand, visibleDeal
 	}
 
 	for {
+		drawBoard(playerHand, visibleDealerHand)
 		fmt.Println("(H)it, (S)tand", splitStr, "or (D)ouble?")
 		var decision string
 		fmt.Scanln(&decision)

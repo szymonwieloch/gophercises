@@ -40,8 +40,8 @@ func Score(hand Hand) (uint, bool) {
 
 // Dealer logic: check if dealer needs to continue bidding
 func dealerNeedsToBid(hand Hand) bool {
-	score, soft17 := Score(hand)
-	return score < 17 || (score == 17 && soft17)
+	score, soft := Score(hand)
+	return score < 17 || (score == 17 && soft)
 }
 
 func isBlackjack(hand Hand) bool {

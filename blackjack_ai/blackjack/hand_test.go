@@ -9,48 +9,48 @@ import (
 
 func TestHandValue(t *testing.T) {
 	cases := []struct {
-		hand   Hand
-		value  uint
-		soft17 bool
+		hand  Hand
+		value uint
+		soft  bool
 	}{
 		{
-			hand:   Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Eight}},
-			value:  8,
-			soft17: false,
+			hand:  Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Eight}},
+			value: 8,
+			soft:  false,
 		},
 		{
-			hand:   Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Two}, cards.Card{Suit: cards.Hearts, Rank: cards.Queen}},
-			value:  12,
-			soft17: false,
+			hand:  Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Two}, cards.Card{Suit: cards.Hearts, Rank: cards.Queen}},
+			value: 12,
+			soft:  false,
 		},
 		{
-			hand:   Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Ace}},
-			value:  11,
-			soft17: false,
+			hand:  Hand{cards.Card{Suit: cards.Clubs, Rank: cards.Ace}},
+			value: 11,
+			soft:  false,
 		},
 		{
-			hand:   Hand{cards.Card{Suit: cards.Spades, Rank: cards.Ace}, cards.Card{Suit: cards.Clubs, Rank: cards.Ace}},
-			value:  12,
-			soft17: false,
+			hand:  Hand{cards.Card{Suit: cards.Spades, Rank: cards.Ace}, cards.Card{Suit: cards.Clubs, Rank: cards.Ace}},
+			value: 12,
+			soft:  false,
 		},
 		{
-			hand:   Hand{cards.Card{Suit: cards.Spades, Rank: cards.Ace}, cards.Card{Suit: cards.Clubs, Rank: cards.Six}},
-			value:  17,
-			soft17: true,
+			hand:  Hand{cards.Card{Suit: cards.Spades, Rank: cards.Ace}, cards.Card{Suit: cards.Clubs, Rank: cards.Six}},
+			value: 17,
+			soft:  true,
 		},
 		{
-			hand:   Hand{cards.Card{Suit: cards.Spades, Rank: cards.King}, cards.Card{Suit: cards.Clubs, Rank: cards.Seven}},
-			value:  17,
-			soft17: false,
+			hand:  Hand{cards.Card{Suit: cards.Spades, Rank: cards.King}, cards.Card{Suit: cards.Clubs, Rank: cards.Seven}},
+			value: 17,
+			soft:  false,
 		},
 	}
 	for _, cs := range cases {
-		value, soft17 := Score(cs.hand)
+		value, soft := Score(cs.hand)
 		if value != cs.value {
 			t.Error("Invalid value ", value, " for case ", cs.hand)
 		}
-		if soft17 != cs.soft17 {
-			t.Error("Invalid soft 17 value ", soft17, " for case ", cs.hand)
+		if soft != cs.soft {
+			t.Error("Invalid soft 17 value ", soft, " for case ", cs.hand)
 		}
 	}
 }
@@ -112,5 +112,35 @@ func TestIsBlackJack(t *testing.T) {
 		cards.Card{Rank: cards.Ace, Suit: cards.Spades},
 	}
 	assert.False(t, isBlackjack(normalHand))
+	longHand := Hand{
+		cards.Card{Rank: cards.Seven, Suit: cards.Spades},
+		cards.Card{Rank: cards.Ten, Suit: cards.Spades},
+		cards.Card{Rank: cards.Four, Suit: cards.Spades},
+	}
+	assert.False(t, isBlackjack(longHand))
+}
 
+func TestCanSplit(t *testing.T) {
+	tests := []struct {
+		hand     Hand
+		expected bool
+	}{
+		{ // ok
+			hand:     Hand{cards.Card{Rank: cards.Ten, Suit: cards.Spades}, cards.Card{Rank: cards.Ten, Suit: cards.Hearts}},
+			expected: true,
+		},
+		{ // wrong number of cards
+			hand:     Hand{cards.Card{Rank: cards.Ten, Suit: cards.Spades}, cards.Card{Rank: cards.Ten, Suit: cards.Hearts}, cards.Card{Rank: cards.Ten, Suit: cards.Clubs}},
+			expected: false,
+		},
+		{ // mismatched cards
+			hand:     Hand{cards.Card{Rank: cards.Ten, Suit: cards.Spades}, cards.Card{Rank: cards.Three, Suit: cards.Hearts}},
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		if CanSplit(test.hand) != test.expected {
+			t.Errorf("Failed case for %v", test)
+		}
+	}
 }

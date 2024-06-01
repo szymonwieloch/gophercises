@@ -11,7 +11,6 @@ const (
 
 type Player interface {
 	Bet() Cents
-	OnStart(playerHand Hand, visibleDealerHand Hand)
 	MakeDecision(playerHand Hand, visibleDealerHand Hand) PlayerDecision
 	OnGameCompleted(playerHand Hand, dealerHand Hand, gain Cents)
 }

@@ -8,12 +8,16 @@ type gameOptions struct {
 	blackjackPayout float64
 }
 
-func defaultOptions() gameOptions {
-	return gameOptions{
+func applyOptions(options []GameOption) gameOptions {
+	opts := gameOptions{
 		games:           2,
 		decks:           3,
 		blackjackPayout: 1.5,
 	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+	return opts
 }
 
 // Set the number of consecutive game played in on session

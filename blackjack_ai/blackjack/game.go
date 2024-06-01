@@ -6,10 +6,8 @@ import (
 
 // Plays a series of games, returns total gain
 func Play(player Player, options ...GameOption) Cents {
-	opts := defaultOptions()
-	for _, opt := range options {
-		opt(&opts)
-	}
+	opts := applyOptions(options)
+
 	var result Cents
 	var deck cards.Deck
 	for range opts.games {
@@ -20,7 +18,9 @@ func Play(player Player, options ...GameOption) Cents {
 }
 
 func maybeResetDeck(deck *cards.Deck, deckCfg uint) {
-	if len(*deck) < (52 * int(deckCfg) / 3) {
+	lenDeck := len(*deck)
+	threshold := 52 * int(deckCfg) / 3
+	if lenDeck < threshold {
 		*deck = cards.NewDeck(cards.WithDecks(deckCfg))
 	}
 }
@@ -37,8 +37,6 @@ func playSingle(deck *cards.Deck, player Player, opts gameOptions) Cents {
 	}
 
 	dealerHand := Hand{deck.Pop(), deck.Pop()}
-
-	player.OnStart(hs.hand, dealerHand[:1])
 
 	if isBlackjack(hs.hand) && isBlackjack(dealerHand) {
 		player.OnGameCompleted(hs.hand, dealerHand, 0)
@@ -59,10 +57,10 @@ func playSingle(deck *cards.Deck, player Player, opts gameOptions) Cents {
 	for len(leftHands) > 0 {
 		current := leftHands[0]
 		leftHands = leftHands[1:]
-		newHands := playerTurn(&current, player, dealerHand, deck)
-		if isBusted(hs.hand) {
-			player.OnGameCompleted(hs.hand, dealerHand, -hs.bet)
-			totalResult -= hs.bet
+		current, newHands := playerTurn(current, player, dealerHand, deck)
+		if isBusted(current.hand) {
+			player.OnGameCompleted(current.hand, dealerHand, -current.bet)
+			totalResult -= current.bet
 		} else {
 			processedHands = append(processedHands, current)
 		}
@@ -76,56 +74,66 @@ func playSingle(deck *cards.Deck, player Player, opts gameOptions) Cents {
 		dealerHand = append(dealerHand, deck.Pop())
 	}
 	for _, ps := range processedHands {
-		totalResult += checkResult(ps, dealerHand, player)
+		gameResult := checkResult(ps, dealerHand)
+		player.OnGameCompleted(hs.hand, dealerHand, gameResult)
+		totalResult += gameResult
 	}
 	return totalResult
 }
 
-func playerTurn(hs *handState, player Player, dealerHand Hand, deck *cards.Deck) []handState {
+// applies user decision. Returns indication if the hand is done, the hand state and new hand (if created by the split)
+func applyPlayerDecision(hs handState, deck *cards.Deck, decision PlayerDecision) (bool, handState, Hand) {
+	switch decision {
+	case Stand:
+		return true, hs, nil
+	case Hit:
+		hs.hand = append(hs.hand, deck.Pop())
+		return isBusted(hs.hand), hs, nil
+	case Double:
+		hs.bet *= 2
+		hs.hand = append(hs.hand, deck.Pop())
+		return true, hs, nil
+	case Split:
+		if !CanSplit(hs.hand) {
+			panic("Invalid user move: split")
+		}
+		newHand := hs.hand[1:2]
+		hs.hand = hs.hand[:1]
+		return false, hs, newHand
+	default:
+		panic("Unrechable")
+	}
+}
+
+func playerTurn(hs handState, player Player, dealerHand Hand, deck *cards.Deck) (handState, []handState) {
 	// return on stand or busted
 	newHands := []handState{}
 	for {
-		switch player.MakeDecision(hs.hand, dealerHand[:1]) {
-		case Stand:
-			return newHands
-		case Hit:
-			hs.hand = append(hs.hand, deck.Pop())
-		case Double:
-			hs.bet *= 2
-			hs.hand = append(hs.hand, deck.Pop())
-			return newHands
-		case Split:
-			if !CanSplit(hs.hand) {
-				panic("Invalid user move: split")
-			}
-			hs.hand = hs.hand[:1]
-			newHands = append(newHands, handState{
-				hand: hs.hand[1:],
-				bet:  player.Bet(),
-			})
+		decision := player.MakeDecision(hs.hand, dealerHand[:1])
+		var newHand Hand
+		var done bool
+		done, hs, newHand = applyPlayerDecision(hs, deck, decision)
+		if newHand != nil {
+			newHands = append(newHands, handState{hand: newHand, bet: player.Bet()})
 		}
-		if isBusted(hs.hand) {
-			return newHands
+		if done {
+			return hs, newHands
 		}
 	}
 }
 
 // After the dealer collected all cards, performs check and side-effects on each hand state
-func checkResult(hs handState, dealerHand Hand, player Player) Cents {
+func checkResult(hs handState, dealerHand Hand) Cents {
 	if isBusted(dealerHand) {
-		player.OnGameCompleted(hs.hand, dealerHand, hs.bet)
 		return hs.bet
 	}
 	dealerScore, _ := Score(dealerHand)
 	playerScore, _ := Score(hs.hand)
 	if dealerScore > playerScore {
-		player.OnGameCompleted(hs.hand, dealerHand, -hs.bet)
 		return -hs.bet
 	} else if dealerScore < playerScore {
-		player.OnGameCompleted(hs.hand, dealerHand, hs.bet)
 		return hs.bet
 	} else {
-		player.OnGameCompleted(hs.hand, dealerHand, 0)
 		return 0
 	}
 }
