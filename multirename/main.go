@@ -9,7 +9,7 @@ import (
 
 func main() {
 	args := parseCmd()
-	fmt.Println(args)
+	//fmt.Println(args)
 	if len(args.Dirs) == 0 {
 		processDir(".", args)
 	} else {
@@ -36,7 +36,7 @@ func newName(oldName string, cfgName string, idx int, fileCnt int) string {
 }
 
 func processDir(dir string, args args) {
-	fmt.Println("Processing directory: ", dir)
+	//fmt.Println("Processing directory: ", dir)
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to process directory", dir, ":", err)
@@ -44,7 +44,7 @@ func processDir(dir string, args args) {
 	}
 	var matched []string
 	for _, file := range files {
-		fmt.Println("Checking file:", path.Join(dir, file.Name()))
+		// fmt.Println("Checking file:", path.Join(dir, file.Name()))
 		if file.IsDir() {
 			if args.Recursive {
 				processDir(path.Join(dir, file.Name()), args)
