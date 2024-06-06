@@ -2,14 +2,15 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"slices"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	"github.com/szymonwieloch/gophercises/hackernews/client"
 )
 
@@ -21,11 +22,9 @@ func init() {
 	templates = template.Must(template.New("main").Parse(templateStr))
 }
 
-const wantStories = 30
-
-func handler(w http.ResponseWriter, r *http.Request) {
+func handler(w http.ResponseWriter, r *http.Request, cache cacheStrategy) {
 	start := time.Now()
-	stories, err := getTopStories(wantStories)
+	stories, err := cache.getTopStories()
 	if err != nil {
 		http.Error(w, "Failed to load top stories", http.StatusInternalServerError)
 		return
@@ -51,80 +50,35 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func takeN[T any](in []T, n int) ([]T, []T) {
-	take := min(n, len(in))
-	return in[:take], in[take:]
-}
-
-type asyncResult struct {
-	story client.Story
-	err   error
-}
-
-func getBatch(storyIDs []client.StoryID) []client.Story {
-	ch := make(chan asyncResult)
-	for _, storyId := range storyIDs {
-		go func(storyId client.StoryID) {
-			story, err := client.GetStory(storyId)
-			ch <- asyncResult{
-				story: story,
-				err:   err,
-			}
-		}(storyId)
-	}
-	var stories []client.Story
-	for range storyIDs {
-		ar := <-ch
-		if ar.err != nil {
-			log.Println("Error getting story: ", ar.err)
-			continue
+func createHandler(a args) http.HandlerFunc {
+	var cache cacheStrategy
+	switch a.Cache {
+	case useCacheNone:
+		cache = cacheNone{
+			count: int(a.Count),
 		}
-		stories = append(stories, ar.story)
-	}
-	return stories
-}
-
-func getTopStories(count int) ([]client.Story, error) {
-	topStories, err := client.TopStories()
-	if err != nil {
-		return nil, err
-	}
-	remaining := topStories
-	var stories []client.Story
-	for len(stories) < count && len(remaining) > 0 {
-		missing := count - len(stories)
-		batchSize := (missing * 5 / 4) + 3
-		var batchIDs []client.StoryID
-		batchIDs, remaining = takeN(remaining, batchSize)
-		batchStories := getBatch(batchIDs)
-		for _, story := range batchStories {
-			if isStoryLink(story) {
-				stories = append(stories, story)
-			}
+	case useCacheRefres:
+		cache = &cacheRefresh{
+			count:  int(a.Count),
+			period: a.Period,
 		}
+	case useCacheBackground:
+		cache = newBackgroundCache(int(a.Count), a.Period)
 	}
-	// we may have too many stories
-	stories = stories[:min(count, len(stories))]
-	//sort
-	storyIDToIdx := map[client.StoryID]int{}
-	for idx, storyId := range topStories {
-		storyIDToIdx[storyId] = idx
-	}
-	slices.SortFunc(stories, func(a, b client.Story) int {
-		return storyIDToIdx[a.ID] - storyIDToIdx[b.ID]
-	})
-	return stories, nil
-}
 
-func isStoryLink(story client.Story) bool {
-	return story.Type == "story" && story.URL != ""
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r, cache)
+	}
 }
 
 func main() {
-	http.HandleFunc("/", handler)
+	var a args
+	arg.MustParse(&a)
+	http.HandleFunc("/", createHandler(a))
 
 	// Start the server
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	port := fmt.Sprintf(":%d", a.Port)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
 
 // item is the same as the hn.Item, but adds the Host field
