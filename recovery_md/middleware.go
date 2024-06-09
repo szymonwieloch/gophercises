@@ -8,7 +8,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"runtime/debug"
+	"strings"
 )
 
 type bufferedResponseWriter struct {
@@ -69,6 +71,7 @@ func recoveryMw(h http.Handler, dev bool) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "<h1>Something went wrong!</h1>")
 			if dev {
+				stack = transformCallStack(stack)
 				fmt.Fprintf(w, "<pre>%s</pre>", stack)
 			}
 		}()
@@ -77,4 +80,34 @@ func recoveryMw(h http.Handler, dev bool) http.HandlerFunc {
 		// didn't panic
 		brw.flush()
 	}
+}
+
+// Converts the "normal" call stack into a html-based callstack with links
+func transformCallStack(cs string) string {
+	var buf strings.Builder
+	lines := strings.Split(cs, "\n")
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "\t") {
+			buf.WriteString(line)
+			buf.WriteString("\n")
+			continue
+		}
+		colIdx := strings.Index(line, ":")
+		fileName := strings.TrimSpace(line[:colIdx])
+		lineNum := strings.Split(line[colIdx+1:], " ")[0]
+		buf.WriteString(line[:(colIdx - len(fileName))]) // whitespace prefix
+		urlValues := url.Values{}
+		urlValues.Add("path", fileName)
+		urlValues.Add("line", lineNum)
+		buf.WriteString("<a href=\"/source?")
+		buf.WriteString(urlValues.Encode())
+		buf.WriteString("\" >")
+		buf.WriteString(fileName)
+		buf.WriteString(":")
+		buf.WriteString(lineNum)
+		buf.WriteString("</a>")
+		buf.WriteString(line[colIdx+1+len(lineNum):])
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
