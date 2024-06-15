@@ -29,8 +29,16 @@ func checkErr(err error) {
 	}
 }
 
+type secretsFileDoesNotExist struct {
+	path string
+}
+
+func (err secretsFileDoesNotExist) Error() string {
+	return fmt.Sprintf("secret file does not exist: '%s'", err.path)
+}
+
 func handleGet(args args) error {
-	secrets, err := readSecrets(args.File)
+	secrets, err := readSecrets(args.File, args.Password)
 	if err != nil {
 		return err
 	}
@@ -51,26 +59,17 @@ func handleSet(args args) error {
 			return err
 		}
 	}
-	secrets, err := readSecrets(args.File)
+	secrets, err := readSecrets(args.File, args.Password)
 	if err != nil {
-		return err
+		_, ok := err.(secretsFileDoesNotExist)
+		if ok {
+			secrets = map[string]string{}
+		} else {
+			return err
+		}
 	}
 	secrets[args.Set.Key] = secret
-	path, err := filePath(args.File)
-	if err != nil {
-		return err
-	}
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	enc := json.NewEncoder(file)
-	err = enc.Encode(secrets)
-	if err != nil {
-		return err
-	}
-	return nil
+	return writeSecrets(args.File, args.Password, secrets)
 }
 
 func filePath(cfgPath string) (string, error) {
@@ -84,7 +83,29 @@ func filePath(cfgPath string) (string, error) {
 	return path.Join(home, ".secrets"), nil
 }
 
-func readSecrets(cfgPath string) (map[string]string, error) {
+func writeSecrets(cfgPath, password string, secrets map[string]string) error {
+	path, err := filePath(cfgPath)
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	encryptor, err := encryptedWriter(password, file)
+	if err != nil {
+		return err
+	}
+	enc := json.NewEncoder(encryptor)
+	err = enc.Encode(secrets)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func readSecrets(cfgPath, password string) (map[string]string, error) {
 	path, err := filePath(cfgPath)
 	if err != nil {
 		return nil, err
@@ -92,14 +113,18 @@ func readSecrets(cfgPath string) (map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("file does not exist: '%s'", path)
+			return nil, secretsFileDoesNotExist{path: path}
 		} else {
 			return nil, fmt.Errorf("error opening file '%s': %w", path, err)
 		}
 	}
 	defer file.Close()
 	var result map[string]string
-	dec := json.NewDecoder(file)
+	decryptor, err := encryptedReader(password, file)
+	if err != nil {
+		return nil, err
+	}
+	dec := json.NewDecoder(decryptor)
 	err = dec.Decode(&result)
 	if err != nil {
 		return nil, err
