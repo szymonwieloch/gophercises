@@ -5,6 +5,7 @@ import (
 	"os/exec"
 )
 
+//go:generate enumer -type=Mode
 type Mode uint
 
 const (
@@ -20,6 +21,7 @@ const (
 )
 
 func Transform(inPath string, outPath string, shapes uint, mode Mode) error {
-	cmd := exec.Command("primitive", "-i", inPath, "-o", outPath, "-m", fmt.Sprint(mode), "-n", fmt.Sprint(shapes))
+	args := []string{"-i", inPath, "-o", outPath, "-m", fmt.Sprint(uint(mode)), "-n", fmt.Sprint(shapes)}
+	cmd := exec.Command("primitive", args...)
 	return cmd.Run()
 }

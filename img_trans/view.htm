@@ -1,0 +1,19 @@
+
+<!doctype html>
+<html>
+<head>
+<title>Image tranform service</title>
+</head>
+<body>
+    {{ $imgPath := .ImagePath }}
+   <img src="/image/{{$imgPath}}" alt="" style="max-width: 1000px; max-height: 1000px; display: block; margin: 30px auto;"/>
+
+   <div>
+    {{range .Options}}
+    <a href="/choice?{{.}}" >
+        <img src="/image/{{$imgPath}}?{{.}}" alt="" style="max-width: 500px; max-height: 500px; float: left; margin:10px"/>
+    </a>
+    {{end}}
+   </div>
+</body>
+</html>
