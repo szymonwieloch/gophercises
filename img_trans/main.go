@@ -9,12 +9,7 @@ func main() {
 	args := parseArgs()
 
 	createUploadDir(args.TmpDir)
-
-	// err := prm.Transform("example.jpg", "out.jpg", 100, prm.Triangle)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
+	go backgroundClenup(args.TmpDir, args.CleanupCheck, args.Expire)
 	runServer(args)
 }
 
