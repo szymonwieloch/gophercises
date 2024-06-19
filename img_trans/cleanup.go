@@ -38,6 +38,7 @@ func cleanupDir(dir string, expiration time.Duration) {
 		return
 	}
 	if time.Now().After(lat.Add(expiration)) {
+		log.Println("Removing ", dir, ", last access time was ", lat, ", now is ", time.Now())
 		err = os.RemoveAll(dir)
 		if err != nil {
 			log.Println("Could not remove directory ", dir, " : ", err)

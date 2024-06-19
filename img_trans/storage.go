@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/szymonwieloch/gophercises/img_trans/prm"
 )
@@ -77,6 +79,11 @@ func openOrCreateFile(tmpDir string, checksum string, opts imageOptions, ext str
 	completePath := path.Join(tmpDir, checksum, imageFileName(opts, ext))
 	file, err := os.Open(completePath)
 	if err == nil {
+		// update access time, so that cache does not delete the file
+		err = os.Chtimes(completePath, time.Now(), time.Time{})
+		if err != nil {
+			log.Println("Could not update file access time: ", completePath, " : ", err)
+		}
 		return file, nil
 	}
 	if !os.IsNotExist(err) {
