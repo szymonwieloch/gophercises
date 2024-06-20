@@ -9,7 +9,7 @@ func main() {
 	args := parseArgs()
 
 	createUploadDir(args.TmpDir)
-	go backgroundClenup(args.TmpDir, args.CleanupCheck, args.Expire)
+	go backgroundCleanup(args.TmpDir, args.CleanupCheck, args.Expire)
 	runServer(args)
 }
 

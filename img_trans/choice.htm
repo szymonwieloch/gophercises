@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+<title>Image tranform service</title>
+</head>
+<style>
+    img{
+        background: transparent url(https://loading.io/assets/mod/spinner/spinner/sample.gif) no-repeat scroll center center;
+        min-width: 128px;
+        min-height: 128px;
+        }
+</style>
+<body>
+    <h1 style="margin: 30px; text-align: center">Choose {{.Choice}}</h1>
+    {{range .Options}}
+    <a href="{{.ViewLink}}" >
+        <img src="{{.ImgLink}}" alt="" style="max-width: 500px; max-height: 500px; float: left; margin:10px"/>
+    </a>
+    {{end}}
+   </div>
+</body>
+</html>

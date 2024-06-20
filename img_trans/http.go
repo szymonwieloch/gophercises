@@ -1,13 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/szymonwieloch/gophercises/img_trans/prm"
@@ -18,8 +16,9 @@ func runServer(args args) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", rootHandler)
 	mux.HandleFunc("/upload", createUploadHandler(args))
-	mux.HandleFunc("/choice/", choiceHandler)
-	mux.HandleFunc("/image/", createImageHandler(args))
+	mux.HandleFunc(choicePrefix, choiceHandler)
+	mux.HandleFunc(imagePrefix, createImageHandler(args))
+	mux.HandleFunc(viewPrefix, viewHandler)
 	log.Fatal(http.ListenAndServe(port, mux))
 }
 
@@ -49,24 +48,90 @@ func createUploadHandler(args args) http.HandlerFunc {
 			log.Println("Error creating uploaded file: ", err)
 			return
 		}
-		url := fmt.Sprintf("/choice/%s/%s", checksum, header.Filename)
+		//url := fmt.Sprintf("%s%s/%s", choicePrefix, checksum, header.Filename)
+		path := fmt.Sprintf("%s/%s", checksum, header.Filename)
+		mode := prm.Circle
+		url := viewUrl(path, imageOptions{
+			mode: &mode,
+			n:    20,
+		})
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 }
 
 func choiceHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	imgPath := strings.TrimPrefix(r.URL.Path, "/choice/")
-	options := []string{"mode=triangle", "mode=rectangle"}
-	vd := viewData{
-		ImagePath: imgPath,
-		Options:   options,
+	imgPath := strings.TrimPrefix(r.URL.Path, viewPrefix)
+	imgOpts, err := parseImageOptions(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Bad image options: ", r.URL)
+		return
 	}
-	err := viewTemplate.Execute(w, &vd)
+
+	cd := choiceData{}
+	if imgOpts.mode == nil {
+		cd.Choice = "Mode"
+		cd.Options = []choiceOptionData{}
+		for _, mode := range prm.ModeValues() {
+			newOpts := imgOpts
+			newOpts.mode = &mode
+			cd.Options = append(cd.Options, choiceOptionData{
+				ImgLink:  imageUrl(imgPath, newOpts),
+				ViewLink: viewUrl(imgPath, newOpts),
+			})
+		}
+	} else if imgOpts.n == 0 {
+		cd.Choice = "Number Of Elements"
+		cd.Options = []choiceOptionData{}
+		nOptions := []uint{5, 10, 20, 40, 80}
+		for _, n := range nOptions {
+			newOpts := imgOpts
+			newOpts.n = n
+			cd.Options = append(cd.Options, choiceOptionData{
+				ImgLink:  imageUrl(imgPath, newOpts),
+				ViewLink: viewUrl(imgPath, newOpts),
+			})
+		}
+
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Bad choice link: ", r.URL)
+		return
+	}
+	err = choiceTemplate.Execute(w, &cd)
+	if err != nil {
+		log.Println("Error executing choice template: ", err)
+	}
+
+}
+
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	imgPath := strings.TrimPrefix(r.URL.Path, viewPrefix)
+	imgOpts, err := parseImageOptions(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Bad image options: ", r.URL)
+		return
+	}
+	shapeOpts := imgOpts
+	shapeOpts.mode = nil
+	nOpts := imgOpts
+	nOpts.n = 0
+	choices := []viewChoiceData{
+		{Name: "Shape", ChoiceLink: choiceUrl(imgPath, shapeOpts)},
+		{Name: "Number Of Shapes", ChoiceLink: choiceUrl(imgPath, nOpts)},
+	}
+	vd := viewData{
+		ImgLink: imageUrl(imgPath, imgOpts),
+		Choices: choices,
+	}
+
+	err = viewTemplate.Execute(w, &vd)
 	if err != nil {
 		log.Println("Error executing view template: ", err)
 	}
-
 }
 
 func createImageHandler(args args) http.HandlerFunc {
@@ -99,47 +164,4 @@ func createImageHandler(args args) http.HandlerFunc {
 			return
 		}
 	}
-}
-
-func parseImageOptions(r *http.Request) (imageOptions, error) {
-	var result imageOptions
-	modeStr := r.URL.Query().Get("mode")
-	if modeStr != "" {
-		mode, err := prm.ParseModeString(modeStr)
-		if err != nil {
-			return imageOptions{}, err
-		}
-		result.mode = &mode
-	}
-	nStr := r.URL.Query().Get("n")
-	if nStr != "" {
-		n, err := strconv.Atoi(nStr)
-		if err != nil {
-			return imageOptions{}, err
-		}
-		if n < 0 {
-			return imageOptions{}, errors.New("n needs to be greater than 0")
-		}
-		result.n = uint(n)
-	}
-
-	if result.n == 0 && result.mode != nil || result.mode == nil && result.n != 0 {
-		return imageOptions{}, errors.New("inavalid combination of image parameters")
-	}
-	return result, nil
-}
-
-func parseImagePath(path string) (checksum string, fileName string) {
-	idx := strings.LastIndex(path, "/")
-	if idx == -1 {
-		return "", ""
-	}
-	fileName = path[idx+1:]
-	path = path[:idx]
-	idx = strings.LastIndex(path, "/")
-	if idx == -1 {
-		return "", ""
-	}
-	checksum = path[idx+1:]
-	return
 }

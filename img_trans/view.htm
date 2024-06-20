@@ -3,15 +3,26 @@
 <html>
 <head>
 <title>Image tranform service</title>
+<style>
+    img{
+        background: transparent url(https://loading.io/assets/mod/spinner/spinner/sample.gif) no-repeat scroll center center;
+        min-width: 128px;
+        min-height: 128px;
+        }
+</style>
+
 </head>
 <body>
-    {{ $imgPath := .ImagePath }}
-   <img src="/image/{{$imgPath}}" alt="" style="max-width: 1000px; max-height: 1000px; display: block; margin: 30px auto;"/>
-
+    <h1 style="margin: 30px auto; display:block; text-align: center;"> View And Download</h1>
+    <img src="{{.ImgLink}}" alt="" style="max-width: 1000px; max-height: 1000px; display: block; margin: 30px auto;" />
+    <a href="{{.ImgLink}}" download>
+        <button style="display:block; margin: 20px auto;">Download</button>
+    </a>
    <div>
-    {{range .Options}}
-    <a href="/choice?{{.}}" >
-        <img src="/image/{{$imgPath}}?{{.}}" alt="" style="max-width: 500px; max-height: 500px; float: left; margin:10px"/>
+    <h2 style="text-align: center;">Modify the image</h2>
+    {{range .Choices}}
+    <a href="{{.ChoiceLink}}" >
+        <button style="display:block; width: 300px; margin: 30px auto" >{{.Name}}</button>
     </a>
     {{end}}
    </div>

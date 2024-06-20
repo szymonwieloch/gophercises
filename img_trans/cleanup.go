@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func backgroundClenup(tmpDir string, checkPeriod, expiration time.Duration) {
+func backgroundCleanup(tmpDir string, checkPeriod, expiration time.Duration) {
 	for {
 		runCleanup(tmpDir, expiration)
 		time.Sleep(checkPeriod)
@@ -38,7 +38,7 @@ func cleanupDir(dir string, expiration time.Duration) {
 		return
 	}
 	if time.Now().After(lat.Add(expiration)) {
-		log.Println("Removing ", dir, ", last access time was ", lat, ", now is ", time.Now())
+		log.Println("Removing ", dir, ", last access time was ", lat, ", now is ", time.Now(), "expiration = ", expiration)
 		err = os.RemoveAll(dir)
 		if err != nil {
 			log.Println("Could not remove directory ", dir, " : ", err)
