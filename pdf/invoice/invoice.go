@@ -41,7 +41,7 @@ func createHeader(pdf *gofpdf.Fpdf) {
 
 }
 
-func createTop(pdf *gofpdf.Fpdf, invoiceNumber string, billedTo Company, date Date, totalPrice Cents) {
+func createTop(pdf *gofpdf.Fpdf, invoiceNumber string, billedTo Company, date Date, totalPrice Cents) float64 {
 	w, h := pdf.GetPageSize()
 	top := h * 0.2
 	mid := w * 0.35
@@ -56,6 +56,8 @@ func createTop(pdf *gofpdf.Fpdf, invoiceNumber string, billedTo Company, date Da
 
 	lineY := top + height + 10
 	pdf.Rect(0.05*w, lineY, 0.9*w, 3, "F")
+
+	return lineY + 3
 
 }
 
@@ -72,6 +74,39 @@ func showBox(pdf *gofpdf.Fpdf, x float64, y float64, title string, lines ...stri
 	return top - y
 }
 
+const rowStart = 0.05
+const rowPrice = 0.45
+const rowQuantity = 0.60
+const rowVAT = 0.70
+const rowTotal = 0.80
+const rowEnd = 0.95
+const rowHeight = 1.5
+
+func showRow(pdf *gofpdf.Fpdf, y float64, name string, price string, quantity string, vat string, total string) float64 {
+	w, _ := pdf.GetPageSize()
+	fontSize, _ := pdf.GetFontSize()
+	pdf.MoveTo(w*rowStart, y)
+	pdf.MultiCell(w*(rowPrice-rowStart), fontSize*rowHeight, name, gofpdf.BorderNone, gofpdf.AlignBaseline, false)
+	pdf.MoveTo((w * rowPrice), y)
+	pdf.CellFormat(w*(rowQuantity-rowPrice), fontSize*rowHeight, price, gofpdf.BorderNone, 0, gofpdf.AlignRight, false, 0, "")
+	pdf.MoveTo((w * rowQuantity), y)
+	pdf.CellFormat(w*(rowVAT-rowQuantity), fontSize*rowHeight, quantity, gofpdf.BorderNone, 0, gofpdf.AlignRight, false, 0, "")
+	pdf.MoveTo((w * rowVAT), y)
+	pdf.CellFormat(w*(rowTotal-rowVAT), fontSize*rowHeight, vat, gofpdf.BorderNone, 0, gofpdf.AlignRight, false, 0, "")
+	pdf.MoveTo((w * rowTotal), y)
+	pdf.CellFormat(w*(rowEnd-rowTotal), fontSize*rowHeight, total, gofpdf.BorderNone, 0, gofpdf.AlignRight, false, 0, "")
+
+	tmp := pdf.SplitLines([]byte(name), w*(rowPrice-rowStart))
+	y += rowHeight * fontSize * float64(len(tmp))
+
+	y += 7
+	pdf.Rect(rowStart*w, y, w*(rowEnd-rowStart), 2, "F")
+	y += 1
+	y += 5
+
+	return y
+}
+
 func createFooter(pdf *gofpdf.Fpdf) {
 	w, h := pdf.GetPageSize()
 	footerPoints := []gofpdf.PointType{
@@ -82,4 +117,9 @@ func createFooter(pdf *gofpdf.Fpdf) {
 	}
 	pdf.Polygon(footerPoints, "F")
 
+}
+
+func totalItemPrice(item Item) Cents {
+	total := float64(item.NettPrice) * float64(item.Quantity) * (1 + float64(item.VAT)/100.0)
+	return Cents(total)
 }

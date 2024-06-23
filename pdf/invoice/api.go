@@ -44,7 +44,26 @@ func Create(invoiceNumber string, date Date, billedTo Company, items []Item) {
 
 	createHeader(pdf)
 	createFooter(pdf)
-	createTop(pdf, invoiceNumber, billedTo, date, 123456)
+	var totalInvoice Cents
+	var totalQuantity uint
+	for _, item := range items {
+		totalInvoice += totalItemPrice(item)
+		totalQuantity += item.Quantity
+	}
+
+	yPos := createTop(pdf, invoiceNumber, billedTo, date, totalInvoice)
+	pdf.SetFont("times", "", 20)
+	pdf.SetTextColor(150, 150, 150)
+	yPos += 20
+	pdf.SetFillColor(150, 150, 150)
+	yPos = showRow(pdf, yPos, "Item", "Net Price", "Quant.", "VAT", "Total")
+	pdf.SetTextColor(0, 0, 0)
+	for _, item := range items {
+		total := totalItemPrice(item)
+		yPos = showRow(pdf, yPos, item.Name, item.NettPrice.String(), fmt.Sprint(item.Quantity), fmt.Sprintf("%d%%", item.VAT), total.String())
+	}
+	pdf.SetTextColor(150, 150, 150)
+	showRow(pdf, yPos, "SUM", "", fmt.Sprint(totalQuantity), "", totalInvoice.String())
 
 	//pdf.Cell(40, 10, "Hello, world")
 
