@@ -1,6 +1,8 @@
 package invoice
 
 import (
+	"fmt"
+
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -10,22 +12,6 @@ const footerLeft = 0.98
 const footerRigth = 0.96
 const invoiceFontSize = 30.0
 const headerFontSize = 12.0
-
-func Create() {
-	pdf := gofpdf.New(gofpdf.OrientationPortrait, gofpdf.UnitPoint, gofpdf.PageSizeA4, "")
-	pdf.AddPage()
-
-	createHeader(pdf)
-	createFooter(pdf)
-	createTop(pdf)
-
-	//pdf.Cell(40, 10, "Hello, world")
-
-	err := pdf.OutputFileAndClose("invoice.pdf")
-	if err != nil {
-		panic(err)
-	}
-}
 
 func createHeader(pdf *gofpdf.Fpdf) {
 	w, h := pdf.GetPageSize()
@@ -55,18 +41,18 @@ func createHeader(pdf *gofpdf.Fpdf) {
 
 }
 
-func createTop(pdf *gofpdf.Fpdf) {
+func createTop(pdf *gofpdf.Fpdf, invoiceNumber string, billedTo Company, date Date, totalPrice Cents) {
 	w, h := pdf.GetPageSize()
 	top := h * 0.2
 	mid := w * 0.35
 	left := w * 0.60
 
-	height := showBox(pdf, w*0.05, top, "Billed To:", "Famous Company", "760 Church Street", "London", "NW50 6BQ")
-	showBox(pdf, mid, top, "Invoice Number:", "00000000123")
-	showBox(pdf, mid, top+height/2, "Invoice Number:", "00000000123")
+	height := showBox(pdf, w*0.05, top, "Billed To:", billedTo.Name, billedTo.Address[0], billedTo.Address[1], billedTo.Address[2])
+	showBox(pdf, mid, top, "Invoice Number:", invoiceNumber)
+	showBox(pdf, mid, top+height/2, "Date:", fmt.Sprintf("%d-%02d-%02d", date.Year, int(date.Month), date.Day))
 	showBox(pdf, left, top, "Invoice Total:")
 	pdf.SetFont("times", "B", 50)
-	pdf.Text(left, top+50, "1234,56$")
+	pdf.Text(left, top+50, totalPrice.String())
 
 	lineY := top + height + 10
 	pdf.Rect(0.05*w, lineY, 0.9*w, 3, "F")
