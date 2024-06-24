@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/szymonwieloch/gophercises/pdf/certificate"
 	"github.com/szymonwieloch/gophercises/pdf/invoice"
 )
 
@@ -26,4 +27,12 @@ func main() {
 		{Name: "An item with a surprisingly long name that is not going to fit in just one row", NettPrice: 999, Quantity: 12, VAT: 0},
 	}
 	invoice.Create("00000000123", date, billedTo, items)
+
+	certDate := certificate.Date{
+		Year:  2024,
+		Month: time.June,
+		Day:   24,
+	}
+
+	certificate.Create("Szymon Wieloch", certDate)
 }
